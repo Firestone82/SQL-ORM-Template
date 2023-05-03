@@ -1,6 +1,7 @@
 package cs.devfire.auction_system_orm.database.dao;
 
 import cs.devfire.auction_system_orm.database.connection.ConnectionProvider;
+import cs.devfire.auction_system_orm.database.connection.NamedParameter;
 import cs.devfire.auction_system_orm.database.connection.NamedParameterStatement;
 import cs.devfire.auction_system_orm.database.connection.SQLCallable;
 
@@ -9,9 +10,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collection;
-import java.util.function.Supplier;
 
-public abstract class AbstractDao<T> {
+public abstract class AbstractDAO<T> {
 
 	/**
 	 * ============= CRUD - Create part
@@ -36,9 +36,9 @@ public abstract class AbstractDao<T> {
 	 * @return number of affected rows
 	 * @throws SQLException if an error occurred
 	 */
-	public int insert(T object, Supplier<Connection> connection) throws SQLException {
+	public int insert(T object, Connection connection) throws SQLException {
 		return ensureConnection(connection, conn -> {
-			try (NamedParameterStatement pStmt = new NamedParameterStatement(conn, getSQLInsert(), Statement.RETURN_GENERATED_KEYS)) {
+			try (NamedParameter pStmt = new NamedParameterStatement(conn, getSQLInsert(), Statement.RETURN_GENERATED_KEYS)) {
 				prepareCommand(pStmt, object);
 				int result = pStmt.executeUpdate();
 				setKeys(object, pStmt.getGeneratedKeys());
@@ -68,7 +68,7 @@ public abstract class AbstractDao<T> {
 	 * @return collection of records
 	 * @throws SQLException if an error occurred
 	 */
-	public Collection<T> select(Supplier<Connection> connection) throws SQLException {
+	public Collection<T> select(Connection connection) throws SQLException {
 		return ensureConnection(connection, conn -> {
 			try (ResultSet rs = conn.createStatement().executeQuery(getSQLSelect())) {
 				return read(rs);
@@ -95,9 +95,9 @@ public abstract class AbstractDao<T> {
 	 * @return record
 	 * @throws SQLException if an error occurred
 	 */
-	public T select(int id, Supplier<Connection> connection) throws SQLException {
+	public T select(int id, Connection connection) throws SQLException {
 		return ensureConnection(connection, conn -> {
-			try (NamedParameterStatement statement = new NamedParameterStatement(conn, getSQLSelectById())) {
+			try (NamedParameter statement = new NamedParameterStatement(conn, getSQLSelectById())) {
 				statement.setInt("id", id);
 
 				try (ResultSet rs = statement.executeQuery()) {
@@ -131,9 +131,9 @@ public abstract class AbstractDao<T> {
 	 * @return number of affected rows
 	 * @throws SQLException if an error occurred
 	 */
-	public int update(T object, Supplier<Connection> connection) throws SQLException {
+	public int update(T object, Connection connection) throws SQLException {
 		return ensureConnection(connection, conn -> {
-			try (NamedParameterStatement pStmt = new NamedParameterStatement(conn, getSQLUpdate())) {
+			try (NamedParameter pStmt = new NamedParameterStatement(conn, getSQLUpdate())) {
 				prepareCommand(pStmt, object);
 				return pStmt.executeUpdate();
 			}
@@ -163,9 +163,9 @@ public abstract class AbstractDao<T> {
 	 * @return number of affected rows
 	 * @throws SQLException if an error occurred
 	 */
-	public int delete(int id, Supplier<Connection> connection) throws SQLException {
+	public int delete(int id, Connection connection) throws SQLException {
 		return ensureConnection(connection, conn -> {
-			try (NamedParameterStatement pStmt = new NamedParameterStatement(conn, getSQLDeleteById())) {
+			try (NamedParameter pStmt = new NamedParameterStatement(conn, getSQLDeleteById())) {
 				pStmt.setInt("id", id);
 				return pStmt.executeUpdate();
 			}
@@ -186,17 +186,16 @@ public abstract class AbstractDao<T> {
 
 	protected abstract String getSQLDeleteById();
 
-	protected abstract void prepareCommand(NamedParameterStatement statement, T object) throws SQLException;
+	protected abstract void prepareCommand(NamedParameter statement, T object) throws SQLException;
 
 	protected abstract Collection<T> read(ResultSet rs) throws SQLException;
 
 	protected abstract void setKeys(T user, ResultSet generatedKeys) throws SQLException;
 
-	public <V> V ensureConnection(Supplier<Connection> connectionSupplier, SQLCallable<V> callable) throws SQLException {
-		Connection connection = null;
+	public <V> V ensureConnection(Connection connection, SQLCallable<V> callable) throws SQLException {
 		boolean closeConnection = false;
 
-		if (connectionSupplier == null) {
+		if (connection == null) {
 			connection = ConnectionProvider.getConnection();
 			closeConnection = true;
 		}
