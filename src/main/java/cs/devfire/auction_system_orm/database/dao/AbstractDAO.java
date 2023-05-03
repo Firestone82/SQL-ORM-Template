@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collection;
+import java.util.function.Supplier;
 
 public abstract class AbstractDAO<T> {
 
@@ -36,9 +37,15 @@ public abstract class AbstractDAO<T> {
 	 * @return number of affected rows
 	 * @throws SQLException if an error occurred
 	 */
+<<<<<<< HEAD:src/main/java/cs/devfire/auction_system_orm/database/dao/AbstractDAO.java
 	public int insert(T object, Connection connection) throws SQLException {
 		return ensureConnection(connection, conn -> {
 			try (NamedParameter pStmt = new NamedParameterStatement(conn, getSQLInsert(), Statement.RETURN_GENERATED_KEYS)) {
+=======
+	public int insert(T object, Supplier<Connection> connection) throws SQLException {
+		return ensureConnection(connection, conn -> {
+			try (NamedParameterStatement pStmt = new NamedParameterStatement(conn, getSQLInsert(), Statement.RETURN_GENERATED_KEYS)) {
+>>>>>>> d98eadb9baa727dbb8662eeb5ad2c774552b30f4:src/main/java/cs/devfire/auction_system_orm/database/dao/AbstractDao.java
 				prepareCommand(pStmt, object);
 				int result = pStmt.executeUpdate();
 				setKeys(object, pStmt.getGeneratedKeys());
@@ -68,7 +75,11 @@ public abstract class AbstractDAO<T> {
 	 * @return collection of records
 	 * @throws SQLException if an error occurred
 	 */
+<<<<<<< HEAD:src/main/java/cs/devfire/auction_system_orm/database/dao/AbstractDAO.java
 	public Collection<T> select(Connection connection) throws SQLException {
+=======
+	public Collection<T> select(Supplier<Connection> connection) throws SQLException {
+>>>>>>> d98eadb9baa727dbb8662eeb5ad2c774552b30f4:src/main/java/cs/devfire/auction_system_orm/database/dao/AbstractDao.java
 		return ensureConnection(connection, conn -> {
 			try (ResultSet rs = conn.createStatement().executeQuery(getSQLSelect())) {
 				return read(rs);
@@ -95,9 +106,15 @@ public abstract class AbstractDAO<T> {
 	 * @return record
 	 * @throws SQLException if an error occurred
 	 */
+<<<<<<< HEAD:src/main/java/cs/devfire/auction_system_orm/database/dao/AbstractDAO.java
 	public T select(int id, Connection connection) throws SQLException {
 		return ensureConnection(connection, conn -> {
 			try (NamedParameter statement = new NamedParameterStatement(conn, getSQLSelectById())) {
+=======
+	public T select(int id, Supplier<Connection> connection) throws SQLException {
+		return ensureConnection(connection, conn -> {
+			try (NamedParameterStatement statement = new NamedParameterStatement(conn, getSQLSelectById())) {
+>>>>>>> d98eadb9baa727dbb8662eeb5ad2c774552b30f4:src/main/java/cs/devfire/auction_system_orm/database/dao/AbstractDao.java
 				statement.setInt("id", id);
 
 				try (ResultSet rs = statement.executeQuery()) {
@@ -131,9 +148,15 @@ public abstract class AbstractDAO<T> {
 	 * @return number of affected rows
 	 * @throws SQLException if an error occurred
 	 */
+<<<<<<< HEAD:src/main/java/cs/devfire/auction_system_orm/database/dao/AbstractDAO.java
 	public int update(T object, Connection connection) throws SQLException {
 		return ensureConnection(connection, conn -> {
 			try (NamedParameter pStmt = new NamedParameterStatement(conn, getSQLUpdate())) {
+=======
+	public int update(T object, Supplier<Connection> connection) throws SQLException {
+		return ensureConnection(connection, conn -> {
+			try (NamedParameterStatement pStmt = new NamedParameterStatement(conn, getSQLUpdate())) {
+>>>>>>> d98eadb9baa727dbb8662eeb5ad2c774552b30f4:src/main/java/cs/devfire/auction_system_orm/database/dao/AbstractDao.java
 				prepareCommand(pStmt, object);
 				return pStmt.executeUpdate();
 			}
@@ -163,9 +186,15 @@ public abstract class AbstractDAO<T> {
 	 * @return number of affected rows
 	 * @throws SQLException if an error occurred
 	 */
+<<<<<<< HEAD:src/main/java/cs/devfire/auction_system_orm/database/dao/AbstractDAO.java
 	public int delete(int id, Connection connection) throws SQLException {
 		return ensureConnection(connection, conn -> {
 			try (NamedParameter pStmt = new NamedParameterStatement(conn, getSQLDeleteById())) {
+=======
+	public int delete(int id, Supplier<Connection> connection) throws SQLException {
+		return ensureConnection(connection, conn -> {
+			try (NamedParameterStatement pStmt = new NamedParameterStatement(conn, getSQLDeleteById())) {
+>>>>>>> d98eadb9baa727dbb8662eeb5ad2c774552b30f4:src/main/java/cs/devfire/auction_system_orm/database/dao/AbstractDao.java
 				pStmt.setInt("id", id);
 				return pStmt.executeUpdate();
 			}
@@ -192,10 +221,15 @@ public abstract class AbstractDAO<T> {
 
 	protected abstract void setKeys(T user, ResultSet generatedKeys) throws SQLException;
 
+<<<<<<< HEAD:src/main/java/cs/devfire/auction_system_orm/database/dao/AbstractDAO.java
 	public <V> V ensureConnection(Connection connection, SQLCallable<V> callable) throws SQLException {
+=======
+	public <V> V ensureConnection(Supplier<Connection> connectionSupplier, SQLCallable<V> callable) throws SQLException {
+		Connection connection = null;
+>>>>>>> d98eadb9baa727dbb8662eeb5ad2c774552b30f4:src/main/java/cs/devfire/auction_system_orm/database/dao/AbstractDao.java
 		boolean closeConnection = false;
 
-		if (connection == null) {
+		if (connectionSupplier == null) {
 			connection = ConnectionProvider.getConnection();
 			closeConnection = true;
 		}
