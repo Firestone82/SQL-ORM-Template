@@ -1,14 +1,22 @@
 package cs.devfire.auction_system_orm;
 
 import cs.devfire.auction_system_orm.database.connection.ConnectionProvider;
-import cs.devfire.auction_system_orm.database.dao.UserDao;
-import cs.devfire.auction_system_orm.database.model.User;
+import cs.devfire.auction_system_orm.database.connection.NamedParameterCall;
+import cs.devfire.auction_system_orm.database.dao.CustomerDAO;
+import cs.devfire.auction_system_orm.database.dao.ReservationDAO;
+import cs.devfire.auction_system_orm.database.dao.TableDAO;
+import cs.devfire.auction_system_orm.database.model.Customer;
+import cs.devfire.auction_system_orm.database.model.Reservation;
+import cs.devfire.auction_system_orm.database.model.Table;
+import cs.devfire.auction_system_orm.utils.Colors;
 import lombok.extern.log4j.Log4j2;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.sql.*;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collection;
 
 @Log4j2(topic = "App")
 public class Program {
@@ -17,51 +25,176 @@ public class Program {
 		loadProperties();
 
 		try (Connection con = ConnectionProvider.getConnection()) {
-			log.info("Connected: {}",con != null);
+			log.info(Colors.ANSI_PURPLE +"Connected: {}"+ Colors.ANSI_RESET,con != null);
+		} catch (SQLException e) {
+			log.error("Connection error", e);
+			return;
+		}
+
+		try (Connection conn = ConnectionProvider.getConnection()) {
+			log.info("");
+			log.info(Colors.ANSI_RED +"CRUD of table" + Colors.ANSI_RESET);
+			log.info("-------------------------------------------------------");
+
+			TableDAO dao = new TableDAO();
+			int status = -1;
+
+			Table table1 = Table.builder().occupied(0).capacity(15).build();
+			Table table2 = Table.builder().occupied(0).capacity(4).build();
+
+			status = dao.insert(table1, conn);
+			log.info(Colors.ANSI_GREEN +"Creating new table: {}"+ Colors.ANSI_RESET, table1);
+			log.info(Colors.ANSI_YELLOW +" - Status: {}, Total tables: {}"+ Colors.ANSI_RESET, status == 1, dao.select().size());
+
+			status = dao.insert(table2, conn);
+			log.info(Colors.ANSI_GREEN +"Creating new table: {}"+ Colors.ANSI_RESET, table2);
+			log.info(Colors.ANSI_YELLOW +" - Status: {}, Total tables: {}"+ Colors.ANSI_RESET, status == 1, dao.select().size());
+
+			Table table3 = dao.select(table2.getTableID(), conn);
+			log.info(Colors.ANSI_GREEN +"Reading table with id {}"+ Colors.ANSI_RESET, table2.getTableID());
+			log.info(Colors.ANSI_YELLOW +" - Table: {}"+ Colors.ANSI_RESET, table3);
+
+			table1.setOccupied(1);
+			table1.setCapacity(10);
+			status = dao.update(table1, conn);
+			log.info(Colors.ANSI_GREEN +"Updating table: {}"+ Colors.ANSI_RESET, table1);
+			log.info(Colors.ANSI_YELLOW +" - Status: {}, Total tables: {}"+ Colors.ANSI_RESET, status == 1, dao.select().size());
+
+			status = dao.delete(table1.getTableID(), conn);
+			log.info(Colors.ANSI_GREEN +"Deleting table with id {}"+ Colors.ANSI_RESET, table1.getTableID());
+			log.info(Colors.ANSI_YELLOW +" - Status: {}, Total tables: {}"+ Colors.ANSI_RESET, status == 1, dao.select().size());
+
+			log.info("-------------------------------------------------------");
 		} catch (SQLException e) {
 			log.error("Connection error", e);
 		}
 
-		User u = User.builder()
-				.login("son28")
-				.name("Tonda")
-				.surname("Sobota")
-				.address("Fialová 8, Ostrava, 70833")
-				.telephone("420596784213")
-				.maximumUnfinishedAuctions(0)
-				.type("U")
-				.build();
+		try (Connection conn = ConnectionProvider.getConnection()) {
+			String sql = "" +
+					"SELECT " +
+					"    t.tableID, " +
+					"    CASE " +
+					"        WHEN t.occupied = 1 THEN 'occupied' " +
+					"        WHEN EXISTS ( " +
+					"            SELECT 1 " +
+					"            FROM Reservation r " +
+					"            WHERE r.tableID = t.tableID " +
+					"              AND r.start > GETDATE() " +
+					"              AND r.start <= DATEADD(HOUR, 1, GETDATE()) " +
+					"              AND r.canceled IS NULL " +
+					"        ) THEN 'reservation near' " +
+					"        WHEN EXISTS ( " +
+					"            SELECT 1 " +
+					"            FROM Reservation r " +
+					"            WHERE r.tableID = t.tableID " +
+					"              AND r.start <= GETDATE() " +
+					"              AND r.[end] > GETDATE() " +
+					"              AND r.canceled IS NULL " +
+					"        ) THEN 'reserved' " +
+					"        ELSE 'available' " +
+					"        END AS status, " +
+					"    r.customerID " +
+					"FROM " +
+					"    [Table] t " +
+					"        LEFT JOIN " +
+					"    Reservation r ON r.tableID = t.tableID " +
+					"        AND r.start <= GETDATE() " +
+					"        AND r.[end] > GETDATE() " +
+					"        AND r.canceled IS NULL " +
+					"ORDER BY " +
+					"    t.tableID;";
 
-		try (Connection connection = ConnectionProvider.getConnection()) {
-			UserDao dao = new UserDao();
-			int count = dao.insert(u, connection);
+			try (PreparedStatement ps = conn.prepareStatement(sql)) {
+				log.info("");
+				log.info(Colors.ANSI_RED +"FUNCTION - Getting all tables with its status"+ Colors.ANSI_RESET);
+				log.info("--------------------------------------------------------");
 
-			if (count >= 1) {
-				log.info("User inserted");
-			} else {
-				log.info("User not inserted");
+				ResultSet rs = ps.executeQuery();
+				while (rs.next()) {
+					log.info(
+							Colors.ANSI_YELLOW +"| Table: {} | Status: {} | CustomerID: {} |" + Colors.ANSI_RESET,
+							String.format("%-2s", rs.getInt("tableID")),
+							String.format("%-16s", rs.getString("status")),
+							rs.getInt("customerID"));
+				}
+
+				log.info("--------------------------------------------------------");
 			}
-
-			count = dao.select(connection).size();
-			log.info("Count: {}", count);
 		} catch (SQLException e) {
-			e.printStackTrace();
+			log.error("Connection error", e);
 		}
 
-		try (Connection connection = ConnectionProvider.getConnection()) {
-			UserDao dao = new UserDao();
-			int count = dao.delete(5, connection);
+		try (Connection conn = ConnectionProvider.getConnection()) {
+			log.info("");
+			log.info(Colors.ANSI_RED +"CRUD of customer" + Colors.ANSI_RESET);
+			log.info("-------------------------------------------------------");
 
-			if (count >= 1) {
-				log.info("User deleted");
-			} else {
-				log.info("User not deleted");
+			CustomerDAO dao = new CustomerDAO();
+			int status = -1;
+
+			Customer customer1 = Customer.builder().firstName("Peter").lastName("Parker").email("peterspider@gmail.com").phone("123456789").build();
+			Customer customer2 = Customer.builder().firstName("Bruce").lastName("Wayne").email("bumbrucnik@yahoo.com").phone("987654321").build();
+
+			status = dao.insert(customer1, conn);
+			log.info(Colors.ANSI_GREEN +"Creating new customer: {}"+ Colors.ANSI_RESET, customer1);
+			log.info(Colors.ANSI_YELLOW +" - Status: {}, Total customers: {}"+ Colors.ANSI_RESET, status == 1, dao.select().size());
+
+			status = dao.insert(customer2, conn);
+			log.info(Colors.ANSI_GREEN +"Creating new customer: {}"+ Colors.ANSI_RESET, customer2);
+			log.info(Colors.ANSI_YELLOW +" - Status: {}, Total customers: {}"+ Colors.ANSI_RESET, status == 1, dao.select().size());
+
+			Customer customer3 = dao.select(customer2.getCustomerID(), conn);
+			log.info(Colors.ANSI_GREEN +"Reading customer with id {}"+ Colors.ANSI_RESET, customer1.getCustomerID());
+			log.info(Colors.ANSI_YELLOW +" - Customer: {}"+ Colors.ANSI_RESET, customer3);
+
+			customer3.setEmail("brucik@gmail.com");
+			status = dao.update(customer3, conn);
+			log.info(Colors.ANSI_GREEN +"Updating customer: {}"+ Colors.ANSI_RESET, customer3);
+			log.info(Colors.ANSI_YELLOW +" - Status: {}, Total customers: {}"+ Colors.ANSI_RESET, status == 1, dao.select().size());
+
+			Customer customer4 = dao.select().stream().findFirst().orElse(customer1);
+			status = dao.delete(customer4.getCustomerID(), conn);
+			log.info(Colors.ANSI_GREEN +"Deleting customer with id {}"+ Colors.ANSI_RESET, customer4.getCustomerID());
+			log.info(Colors.ANSI_YELLOW +" - Status: {}, Total customers: {}"+ Colors.ANSI_RESET, status == 1, dao.select().size());
+		} catch (Exception e) {
+			log.error("Connection error", e);
+		}
+
+		try (Connection conn = ConnectionProvider.getConnection()) {
+			Collection<Reservation> reservations = Arrays.asList(
+					Reservation.builder().customerID(1).tableID(1).start(LocalDateTime.now()).end(LocalDateTime.now().plusHours(1)).description("Dinner for two").build(),
+					Reservation.builder().customerID(4).tableID(1).start(LocalDateTime.now()).end(LocalDateTime.now().plusHours(1)).amount(5).description("Vacation dinner").build(),
+					Reservation.builder().customerID(2).tableID(2).start(LocalDateTime.now().plusDays(1)).end(LocalDateTime.now().plusDays(1).plusHours(2)).description("Lunch meeting").build(),
+					Reservation.builder().customerID(1).tableID(3).start(LocalDateTime.now().plusDays(2)).end(LocalDateTime.now().plusDays(2).plusHours(3)).description("Family dinner").build(),
+					Reservation.builder().customerID(8).tableID(1).start(LocalDateTime.now().plusDays(3)).end(LocalDateTime.now().plusDays(3).plusHours(1)).description("Quick lunch").build(),
+					Reservation.builder().customerID(6).tableID(2).start(LocalDateTime.now().plusDays(4)).end(LocalDateTime.now().plusDays(4).plusHours(2)).description("Business dinner").build()
+			);
+
+			String sql = "{call NewReservation(:customerID, :tableID, :amount, :start, :end, :description, :status)}";
+			ReservationDAO reservationDAO = new ReservationDAO();
+
+			log.info("");
+			log.info(Colors.ANSI_RED +"PROCEDURE - Creating new reservations" + Colors.ANSI_RESET);
+			log.info("--------------------------------------------------------");
+
+			for (Reservation reservation : reservations) {
+				try (CallableStatement cs = conn.prepareCall(sql)) {
+					try (NamedParameterCall npc = new NamedParameterCall(conn, sql)) {
+						reservationDAO.prepareCommand(npc, reservation);
+						npc.registerOutParameter("status", Types.VARCHAR);
+						npc.execute();
+
+						String status = (String) npc.getOutParameter("status");
+						log.info(Colors.ANSI_GREEN +"Creating reservation: {}"+ Colors.ANSI_RESET, reservation);
+						log.info(Colors.ANSI_YELLOW +" - Output: {}"+ Colors.ANSI_RESET, status);
+					};
+
+				}
 			}
 
-			count = dao.select(connection).size();
-			log.info("Count: {}", count);
+			log.info("--------------------------------------------------------");
 		} catch (SQLException e) {
-			e.printStackTrace();
+			log.error("Connection error", e);
 		}
 	}
 
