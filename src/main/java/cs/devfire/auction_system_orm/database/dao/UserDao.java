@@ -14,9 +14,9 @@ public class UserDao extends AbstractDao<User> {
     @Override
 	protected String getSQLInsert() {
 		return "INSERT INTO \"User\" " +
-				"(login, name, surname, address, telephone, maximum_unfinisfed_auctions, last_visit, type) " +
+				"(login, name, surname, address, telephone, maximum_unfinished_auctions, last_visit, type) " +
 				"VALUES " +
-				"(:login, :name, :surname, :address, :telephone,:maximum_unfinisfed_auctions, :last_visit, :type)";
+				"(:login, :name, :surname, :address, :telephone,:maximum_unfinished_auctions, :last_visit, :type)";
 	}
 
 	@Override
@@ -32,7 +32,7 @@ public class UserDao extends AbstractDao<User> {
 	@Override
 	protected String getSQLUpdate() {
 		return "UPDATE \"User\" " +
-				"SET login=:login, name=:name, surname=:surname, address=:address, telephone=:telephone, maximum_unfinisfed_auctions=:maximum_unfinisfed_auctions, last_visit=:last_visit, type=:type " +
+				"SET login=:login, name=:name, surname=:surname, address=:address, telephone=:telephone, maximum_unfinished_auctions=:maximum_unfinished_auctions, last_visit=:last_visit, type=:type " +
 				"WHERE id=:id";
 	}
 
@@ -58,7 +58,7 @@ public class UserDao extends AbstractDao<User> {
 		statement.setString("surname", user.getSurname());
 		statement.setString("address", user.getAddress());
 		statement.setString("telephone", user.getTelephone());
-		statement.setInt("maximum_unfinisfed_auctions", user.getMaximumUnfinishedAuctions());
+		statement.setInt("maximum_unfinished_auctions", user.getMaximumUnfinishedAuctions());
 		statement.setDateTime("last_visit", user.getLastVisit());
 		statement.setString("type", user.getType());
 	}
@@ -81,7 +81,7 @@ public class UserDao extends AbstractDao<User> {
             		    .surname(rs.getString("surname"))
             		    .address(rs.getString("address"))
             		    .telephone(rs.getString("telephone"))
-            		    .maximumUnfinishedAuctions(rs.getInt("maximum_unfinisfed_auctions"))
+            		    .maximumUnfinishedAuctions(rs.getInt("maximum_unfinished_auctions"))
             		    .type(rs.getString("type"))
             		    .build();
 
