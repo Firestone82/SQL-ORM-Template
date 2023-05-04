@@ -1,11 +1,13 @@
 package cs.devfire.auction_system_orm.database.dao;
 
+import cs.devfire.auction_system_orm.database.connection.ConnectionProvider;
 import cs.devfire.auction_system_orm.database.connection.NamedParameter;
+import cs.devfire.auction_system_orm.database.connection.NamedParameterCall;
 import cs.devfire.auction_system_orm.database.model.Reservation;
+import cs.devfire.auction_system_orm.utils.Colors;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import javax.sql.ConnectionPoolDataSource;
+import java.sql.*;
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -106,6 +108,22 @@ public class ReservationDAO extends AbstractDAO<Reservation> {
 
 		return objects;
     }
+
+	public String createReservation(Reservation reservation) throws SQLException {
+		String sql = "{call NewReservation(:customerID, :tableID, :amount, :start, :end, :description, :status)}";
+
+		try (Connection conn = ConnectionProvider.getConnection()) {
+			try (CallableStatement cs = conn.prepareCall(sql)) {
+				try (NamedParameterCall npc = new NamedParameterCall(conn, sql)) {
+					prepareCommand(npc, reservation);
+					npc.registerOutParameter("status", Types.VARCHAR);
+					npc.execute();
+
+					return (String) npc.getOutParameter("status");
+				}
+			}
+		}
+	}
 	
 	@Override
 	protected void setKeys(Reservation reservation, ResultSet generatedKeys) throws SQLException {

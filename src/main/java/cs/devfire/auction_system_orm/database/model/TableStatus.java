@@ -9,10 +9,9 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @Setter
 @ToString
-public class Table {
+public class TableStatus extends Table {
 
-    private int tableID;
-    private int occupied;
-    private int capacity;
+    private int customerID;
+    private String status;
 
 }

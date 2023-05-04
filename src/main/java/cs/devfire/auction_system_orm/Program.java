@@ -8,6 +8,7 @@ import cs.devfire.auction_system_orm.database.dao.TableDAO;
 import cs.devfire.auction_system_orm.database.model.Customer;
 import cs.devfire.auction_system_orm.database.model.Reservation;
 import cs.devfire.auction_system_orm.database.model.Table;
+import cs.devfire.auction_system_orm.database.model.TableStatus;
 import cs.devfire.auction_system_orm.utils.Colors;
 import lombok.extern.log4j.Log4j2;
 
@@ -70,56 +71,21 @@ public class Program {
 		}
 
 		try (Connection conn = ConnectionProvider.getConnection()) {
-			String sql = "" +
-					"SELECT " +
-					"    t.tableID, " +
-					"    CASE " +
-					"        WHEN t.occupied = 1 THEN 'occupied' " +
-					"        WHEN EXISTS ( " +
-					"            SELECT 1 " +
-					"            FROM Reservation r " +
-					"            WHERE r.tableID = t.tableID " +
-					"              AND r.start > GETDATE() " +
-					"              AND r.start <= DATEADD(HOUR, 1, GETDATE()) " +
-					"              AND r.canceled IS NULL " +
-					"        ) THEN 'reservation near' " +
-					"        WHEN EXISTS ( " +
-					"            SELECT 1 " +
-					"            FROM Reservation r " +
-					"            WHERE r.tableID = t.tableID " +
-					"              AND r.start <= GETDATE() " +
-					"              AND r.[end] > GETDATE() " +
-					"              AND r.canceled IS NULL " +
-					"        ) THEN 'reserved' " +
-					"        ELSE 'available' " +
-					"        END AS status, " +
-					"    r.customerID " +
-					"FROM " +
-					"    [Table] t " +
-					"        LEFT JOIN " +
-					"    Reservation r ON r.tableID = t.tableID " +
-					"        AND r.start <= GETDATE() " +
-					"        AND r.[end] > GETDATE() " +
-					"        AND r.canceled IS NULL " +
-					"ORDER BY " +
-					"    t.tableID;";
+			log.info("");
+			log.info(Colors.ANSI_RED +"FUNCTION - Getting all tables with its status"+ Colors.ANSI_RESET);
+			log.info("--------------------------------------------------------");
 
-			try (PreparedStatement ps = conn.prepareStatement(sql)) {
-				log.info("");
-				log.info(Colors.ANSI_RED +"FUNCTION - Getting all tables with its status"+ Colors.ANSI_RESET);
-				log.info("--------------------------------------------------------");
+			TableDAO dao = new TableDAO();
 
-				ResultSet rs = ps.executeQuery();
-				while (rs.next()) {
-					log.info(
-							Colors.ANSI_YELLOW +"| Table: {} | Status: {} | CustomerID: {} |" + Colors.ANSI_RESET,
-							String.format("%-2s", rs.getInt("tableID")),
-							String.format("%-16s", rs.getString("status")),
-							rs.getInt("customerID"));
-				}
-
-				log.info("--------------------------------------------------------");
+			for (TableStatus ts : dao.getTableStatus()) {
+				log.info(
+						Colors.ANSI_YELLOW +"| Table: {} | Status: {} | CustomerID: {} |" + Colors.ANSI_RESET,
+						String.format("%-2s", ts.getTableID()),
+						String.format("%-16s", ts.getStatus()),
+						ts.getCustomerID());
 			}
+
+			log.info("--------------------------------------------------------");
 		} catch (SQLException e) {
 			log.error("Connection error", e);
 		}
@@ -170,26 +136,16 @@ public class Program {
 					Reservation.builder().customerID(6).tableID(2).start(LocalDateTime.now().plusDays(4)).end(LocalDateTime.now().plusDays(4).plusHours(2)).description("Business dinner").build()
 			);
 
-			String sql = "{call NewReservation(:customerID, :tableID, :amount, :start, :end, :description, :status)}";
-			ReservationDAO reservationDAO = new ReservationDAO();
-
 			log.info("");
 			log.info(Colors.ANSI_RED +"PROCEDURE - Creating new reservations" + Colors.ANSI_RESET);
 			log.info("--------------------------------------------------------");
 
+			ReservationDAO dao = new ReservationDAO();
+
 			for (Reservation reservation : reservations) {
-				try (CallableStatement cs = conn.prepareCall(sql)) {
-					try (NamedParameterCall npc = new NamedParameterCall(conn, sql)) {
-						reservationDAO.prepareCommand(npc, reservation);
-						npc.registerOutParameter("status", Types.VARCHAR);
-						npc.execute();
-
-						String status = (String) npc.getOutParameter("status");
-						log.info(Colors.ANSI_GREEN +"Creating reservation: {}"+ Colors.ANSI_RESET, reservation);
-						log.info(Colors.ANSI_YELLOW +" - Output: {}"+ Colors.ANSI_RESET, status);
-					};
-
-				}
+				String status = dao.createReservation(reservation);
+				log.info(Colors.ANSI_GREEN +"Creating reservation: {}"+ Colors.ANSI_RESET, reservation);
+				log.info(Colors.ANSI_YELLOW +" - Output: {}"+ Colors.ANSI_RESET, status);
 			}
 
 			log.info("--------------------------------------------------------");

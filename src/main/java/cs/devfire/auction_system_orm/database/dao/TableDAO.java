@@ -1,12 +1,13 @@
 package cs.devfire.auction_system_orm.database.dao;
 
+import cs.devfire.auction_system_orm.database.connection.ConnectionProvider;
 import cs.devfire.auction_system_orm.database.connection.NamedParameter;
 import cs.devfire.auction_system_orm.database.model.Customer;
 import cs.devfire.auction_system_orm.database.model.Table;
+import cs.devfire.auction_system_orm.database.model.TableStatus;
+import cs.devfire.auction_system_orm.utils.Colors;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -84,6 +85,61 @@ public class TableDAO extends AbstractDAO<Table> {
 
 		return objects;
     }
+
+	public Collection<TableStatus> getTableStatus() throws SQLException {
+		String sql = "" +
+				"SELECT " +
+				"    t.tableID, " +
+				"    CASE " +
+				"        WHEN t.occupied = 1 THEN 'occupied' " +
+				"        WHEN EXISTS ( " +
+				"            SELECT 1 " +
+				"            FROM Reservation r " +
+				"            WHERE r.tableID = t.tableID " +
+				"              AND r.start > GETDATE() " +
+				"              AND r.start <= DATEADD(HOUR, 1, GETDATE()) " +
+				"              AND r.canceled IS NULL " +
+				"        ) THEN 'reservation near' " +
+				"        WHEN EXISTS ( " +
+				"            SELECT 1 " +
+				"            FROM Reservation r " +
+				"            WHERE r.tableID = t.tableID " +
+				"              AND r.start <= GETDATE() " +
+				"              AND r.[end] > GETDATE() " +
+				"              AND r.canceled IS NULL " +
+				"        ) THEN 'reserved' " +
+				"        ELSE 'available' " +
+				"        END AS status, " +
+				"    r.customerID " +
+				"FROM " +
+				"    [Table] t " +
+				"        LEFT JOIN " +
+				"    Reservation r ON r.tableID = t.tableID " +
+				"        AND r.start <= GETDATE() " +
+				"        AND r.[end] > GETDATE() " +
+				"        AND r.canceled IS NULL " +
+				"ORDER BY " +
+				"    t.tableID;";
+
+		try (Connection conn = ConnectionProvider.getConnection()) {
+			try (PreparedStatement ps = conn.prepareStatement(sql)) {
+				try (ResultSet rs = ps.executeQuery()) {
+					Collection<TableStatus> objects = new LinkedList<>();
+
+					while (rs.next()) {
+						objects.add(TableStatus.builder()
+								.tableID(rs.getInt("tableID"))
+								.status(rs.getString("status"))
+								.customerID(rs.getInt("customerID"))
+								.build());
+
+					}
+
+					return objects;
+				}
+			}
+		}
+	}
 	
 	@Override
 	protected void setKeys(Table user, ResultSet generatedKeys) throws SQLException {
