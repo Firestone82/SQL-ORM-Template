@@ -32,7 +32,7 @@ public class Program {
 			return;
 		}
 
-		try (Connection conn = ConnectionProvider.getConnection()) {
+		try {
 			log.info("");
 			log.info(Colors.ANSI_RED +"CRUD of table" + Colors.ANSI_RESET);
 			log.info("-------------------------------------------------------");
@@ -43,25 +43,25 @@ public class Program {
 			Table table1 = Table.builder().occupied(0).capacity(15).build();
 			Table table2 = Table.builder().occupied(0).capacity(4).build();
 
-			status = dao.insert(table1, conn);
+			status = dao.insert(table1);
 			log.info(Colors.ANSI_GREEN +"Creating new table: {}"+ Colors.ANSI_RESET, table1);
 			log.info(Colors.ANSI_YELLOW +" - Status: {}, Total tables: {}"+ Colors.ANSI_RESET, status == 1, dao.select().size());
 
-			status = dao.insert(table2, conn);
+			status = dao.insert(table2);
 			log.info(Colors.ANSI_GREEN +"Creating new table: {}"+ Colors.ANSI_RESET, table2);
 			log.info(Colors.ANSI_YELLOW +" - Status: {}, Total tables: {}"+ Colors.ANSI_RESET, status == 1, dao.select().size());
 
-			Table table3 = dao.select(table2.getTableID(), conn);
+			Table table3 = dao.select(table2.getTableID());
 			log.info(Colors.ANSI_GREEN +"Reading table with id {}"+ Colors.ANSI_RESET, table2.getTableID());
 			log.info(Colors.ANSI_YELLOW +" - Table: {}"+ Colors.ANSI_RESET, table3);
 
 			table1.setOccupied(1);
 			table1.setCapacity(10);
-			status = dao.update(table1, conn);
+			status = dao.update(table1);
 			log.info(Colors.ANSI_GREEN +"Updating table: {}"+ Colors.ANSI_RESET, table1);
 			log.info(Colors.ANSI_YELLOW +" - Status: {}, Total tables: {}"+ Colors.ANSI_RESET, status == 1, dao.select().size());
 
-			status = dao.delete(table1.getTableID(), conn);
+			status = dao.delete(table1.getTableID());
 			log.info(Colors.ANSI_GREEN +"Deleting table with id {}"+ Colors.ANSI_RESET, table1.getTableID());
 			log.info(Colors.ANSI_YELLOW +" - Status: {}, Total tables: {}"+ Colors.ANSI_RESET, status == 1, dao.select().size());
 
@@ -70,16 +70,14 @@ public class Program {
 			log.error("Connection error", e);
 		}
 
-		try (Connection conn = ConnectionProvider.getConnection()) {
+		try {
 			log.info("");
 			log.info(Colors.ANSI_RED +"FUNCTION - Getting all tables with its status"+ Colors.ANSI_RESET);
 			log.info("--------------------------------------------------------");
 
 			TableDAO dao = new TableDAO();
-
 			for (TableStatus ts : dao.getTableStatus()) {
-				log.info(
-						Colors.ANSI_YELLOW +"| Table: {} | Status: {} | CustomerID: {} |" + Colors.ANSI_RESET,
+				log.info(Colors.ANSI_YELLOW +"| Table: {} | Status: {} | CustomerID: {} |" + Colors.ANSI_RESET,
 						String.format("%-2s", ts.getTableID()),
 						String.format("%-16s", ts.getStatus()),
 						ts.getCustomerID());
@@ -90,7 +88,7 @@ public class Program {
 			log.error("Connection error", e);
 		}
 
-		try (Connection conn = ConnectionProvider.getConnection()) {
+		try {
 			log.info("");
 			log.info(Colors.ANSI_RED +"CRUD of customer" + Colors.ANSI_RESET);
 			log.info("-------------------------------------------------------");
@@ -101,32 +99,32 @@ public class Program {
 			Customer customer1 = Customer.builder().firstName("Peter").lastName("Parker").email("peterspider@gmail.com").phone("123456789").build();
 			Customer customer2 = Customer.builder().firstName("Bruce").lastName("Wayne").email("bumbrucnik@yahoo.com").phone("987654321").build();
 
-			status = dao.insert(customer1, conn);
+			status = dao.insert(customer1);
 			log.info(Colors.ANSI_GREEN +"Creating new customer: {}"+ Colors.ANSI_RESET, customer1);
 			log.info(Colors.ANSI_YELLOW +" - Status: {}, Total customers: {}"+ Colors.ANSI_RESET, status == 1, dao.select().size());
 
-			status = dao.insert(customer2, conn);
+			status = dao.insert(customer2);
 			log.info(Colors.ANSI_GREEN +"Creating new customer: {}"+ Colors.ANSI_RESET, customer2);
 			log.info(Colors.ANSI_YELLOW +" - Status: {}, Total customers: {}"+ Colors.ANSI_RESET, status == 1, dao.select().size());
 
-			Customer customer3 = dao.select(customer2.getCustomerID(), conn);
+			Customer customer3 = dao.select(customer2.getCustomerID());
 			log.info(Colors.ANSI_GREEN +"Reading customer with id {}"+ Colors.ANSI_RESET, customer1.getCustomerID());
 			log.info(Colors.ANSI_YELLOW +" - Customer: {}"+ Colors.ANSI_RESET, customer3);
 
 			customer3.setEmail("brucik@gmail.com");
-			status = dao.update(customer3, conn);
+			status = dao.update(customer3);
 			log.info(Colors.ANSI_GREEN +"Updating customer: {}"+ Colors.ANSI_RESET, customer3);
 			log.info(Colors.ANSI_YELLOW +" - Status: {}, Total customers: {}"+ Colors.ANSI_RESET, status == 1, dao.select().size());
 
 			Customer customer4 = dao.select().stream().findFirst().orElse(customer1);
-			status = dao.delete(customer4.getCustomerID(), conn);
+			status = dao.delete(customer4.getCustomerID());
 			log.info(Colors.ANSI_GREEN +"Deleting customer with id {}"+ Colors.ANSI_RESET, customer4.getCustomerID());
 			log.info(Colors.ANSI_YELLOW +" - Status: {}, Total customers: {}"+ Colors.ANSI_RESET, status == 1, dao.select().size());
 		} catch (Exception e) {
 			log.error("Connection error", e);
 		}
 
-		try (Connection conn = ConnectionProvider.getConnection()) {
+		try {
 			Collection<Reservation> reservations = Arrays.asList(
 					Reservation.builder().customerID(1).tableID(1).start(LocalDateTime.now()).end(LocalDateTime.now().plusHours(1)).description("Dinner for two").build(),
 					Reservation.builder().customerID(4).tableID(1).start(LocalDateTime.now()).end(LocalDateTime.now().plusHours(1)).amount(5).description("Vacation dinner").build(),
@@ -141,7 +139,6 @@ public class Program {
 			log.info("--------------------------------------------------------");
 
 			ReservationDAO dao = new ReservationDAO();
-
 			for (Reservation reservation : reservations) {
 				String status = dao.createReservation(reservation);
 				log.info(Colors.ANSI_GREEN +"Creating reservation: {}"+ Colors.ANSI_RESET, reservation);
