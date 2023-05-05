@@ -3,12 +3,14 @@ package cz.devfire.auction_system_orm.database.model;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
 @Builder
 @Getter
 @Setter
+@ToString
 public class User {
 
     private int id;
@@ -23,7 +25,7 @@ public class User {
 
     //Artificial columns (physically not in the database)
     public String getFullName() {
-    	return getName() + " " + getSurname();
+        return getName() + " " + getSurname();
     }
 
 }

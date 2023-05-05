@@ -10,13 +10,13 @@ import java.sql.SQLException;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public abstract class ConnectionProvider {
 
-	public static Connection getConnection() throws SQLException {
-		try {
-			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
+    public static Connection getConnection() throws SQLException {
+        try {
+            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
 
-		return DriverManager.getConnection(System.getProperty("connection_strings." + System.getProperty("app_settings.dbms","mssql")));
-	}
+        return DriverManager.getConnection(System.getProperty("connection_strings." + System.getProperty("app_settings.dbms", "mssql")));
+    }
 }
