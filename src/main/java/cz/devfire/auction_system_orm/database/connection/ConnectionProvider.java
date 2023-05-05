@@ -1,4 +1,4 @@
-package cs.devfire.auction_system_orm.database.connection;
+package cz.devfire.auction_system_orm.database.connection;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;

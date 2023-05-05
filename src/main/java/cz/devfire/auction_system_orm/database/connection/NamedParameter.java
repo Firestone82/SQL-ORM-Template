@@ -1,4 +1,4 @@
-package cs.devfire.auction_system_orm.database.connection;
+package cz.devfire.auction_system_orm.database.connection;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

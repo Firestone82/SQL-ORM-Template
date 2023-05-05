@@ -1,8 +1,8 @@
-package cs.devfire.auction_system_orm;
+package cz.devfire.auction_system_orm;
 
-import cs.devfire.auction_system_orm.database.connection.ConnectionProvider;
-import cs.devfire.auction_system_orm.database.dao.UserDao;
-import cs.devfire.auction_system_orm.database.model.User;
+import cz.devfire.auction_system_orm.database.connection.ConnectionProvider;
+import cz.devfire.auction_system_orm.database.dao.UserDao;
+import cz.devfire.auction_system_orm.database.model.User;
 import lombok.extern.log4j.Log4j2;
 
 import java.io.IOException;

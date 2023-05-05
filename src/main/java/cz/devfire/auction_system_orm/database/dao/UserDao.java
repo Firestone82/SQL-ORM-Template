@@ -1,7 +1,7 @@
-package cs.devfire.auction_system_orm.database.dao;
+package cz.devfire.auction_system_orm.database.dao;
 
-import cs.devfire.auction_system_orm.database.connection.NamedParameterStatement;
-import cs.devfire.auction_system_orm.database.model.User;
+import cz.devfire.auction_system_orm.database.connection.NamedParameterStatement;
+import cz.devfire.auction_system_orm.database.model.User;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -85,6 +85,7 @@ public class UserDao extends AbstractDao<User> {
             		    .type(rs.getString("type"))
             		    .build();
 
+			// Timestamp can be null
 			Timestamp ts = rs.getTimestamp("last_visit");
 			if (ts != null) {
 				user.setLastVisit(ts.toLocalDateTime());
@@ -98,10 +99,10 @@ public class UserDao extends AbstractDao<User> {
 	
 	@Override
 	protected void setKeys(User user, ResultSet generatedKeys) throws SQLException {
-		int i = 1;
+		// Modify this if the keys are different
 
-		while (generatedKeys.next()) {
-			user.setId(generatedKeys.getInt(i++));
+		if (generatedKeys != null && generatedKeys.next()) {
+			user.setId(generatedKeys.getInt(1));
 		}
 	}
 	

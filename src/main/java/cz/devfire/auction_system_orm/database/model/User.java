@@ -1,4 +1,4 @@
-package cs.devfire.auction_system_orm.database.model;
+package cz.devfire.auction_system_orm.database.model;
 
 import lombok.Builder;
 import lombok.Getter;

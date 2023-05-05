@@ -1,4 +1,4 @@
-package cs.devfire.auction_system_orm.database.connection;
+package cz.devfire.auction_system_orm.database.connection;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public class NamedParameterCall implements NamedParameter {
+public class NamedParameterStatement implements NamedParameter {
 
 	/** The statement this object is wrapping. */
-	private final CallableStatement statement;
+	private final PreparedStatement statement;
 
 	/**
 	 * Maps parameter names to arrays of ints which are the parameter indices.
@@ -21,14 +21,19 @@ public class NamedParameterCall implements NamedParameter {
 	/**
 	 * Creates a NamedParameterStatement. Wraps a call to
 	 * c.{@link Connection#prepareStatement(String) prepareStatement}.
-	 *
+	 * 
 	 * @param connection the database connection
 	 * @param query      the parameterized query
 	 * @throws SQLException if the statement could not be created
 	 */
-	public NamedParameterCall(Connection connection, String query) throws SQLException {
+	public NamedParameterStatement(Connection connection, String query) throws SQLException {
 		String parsedQuery = parse(query);
-		statement = connection.prepareCall(parsedQuery);
+		statement = connection.prepareStatement(parsedQuery);
+	}
+
+	public NamedParameterStatement(Connection connection, String query, int returnGeneratedKeys) throws SQLException {
+		String parsedQuery = parse(query);
+		statement = connection.prepareStatement(parsedQuery, returnGeneratedKeys);
 	}
 
 	/**
@@ -40,6 +45,7 @@ public class NamedParameterCall implements NamedParameter {
 	 * @throws IllegalArgumentException if the parameter does not exist
 	 * @see PreparedStatement#setObject(int, Object)
 	 */
+	@Override
 	public void setObject(String name, Object value) throws SQLException {
 		for (int index : getIndexes(name)) {
 			statement.setObject(index, value);
@@ -55,6 +61,7 @@ public class NamedParameterCall implements NamedParameter {
 	 * @throws IllegalArgumentException if the parameter does not exist
 	 * @see PreparedStatement#setString(int, String)
 	 */
+	@Override
 	public void setString(String name, String value) throws SQLException {
 		if (value == null) {
 			setNull(name);
@@ -74,6 +81,7 @@ public class NamedParameterCall implements NamedParameter {
 	 * @throws IllegalArgumentException if the parameter does not exist
 	 * @see PreparedStatement#setInt(int, int)
 	 */
+	@Override
 	public void setInt(String name, int value) throws SQLException {
 		for (int index : getIndexes(name)) {
 			statement.setInt(index, value);
@@ -89,6 +97,7 @@ public class NamedParameterCall implements NamedParameter {
 	 * @throws IllegalArgumentException if the parameter does not exist
 	 * @see PreparedStatement#setInt(int, int)
 	 */
+	@Override
 	public void setLong(String name, long value) throws SQLException {
 		for (int index : getIndexes(name)) {
 			statement.setLong(index, value);
@@ -102,8 +111,9 @@ public class NamedParameterCall implements NamedParameter {
 	 * @param value parameter value
 	 * @throws SQLException             if an error occurred
 	 * @throws IllegalArgumentException if the parameter does not exist
-	 * @see PreparedStatement#setTimestamp(int, Timestamp)
+	 * @see PreparedStatement#setTimestamp(int, java.sql.Timestamp)
 	 */
+	@Override
 	public void setTimestamp(String name, Timestamp value) throws SQLException {
 		if (value == null) {
 			setNull(name);
@@ -121,40 +131,11 @@ public class NamedParameterCall implements NamedParameter {
 	 * @param value parameter value
 	 * @throws SQLException             if an error occurred
 	 * @throws IllegalArgumentException if the parameter does not exist
-	 * @see PreparedStatement#setTimestamp(int, Timestamp)
+	 * @see PreparedStatement#setTimestamp(int, java.sql.Timestamp)
 	 */
+	@Override
 	public void setDateTime(String name, LocalDateTime value) throws SQLException {
 		setTimestamp(name, value == null ? null : Timestamp.valueOf(value));
-	}
-
-	/**
-	 * Sets a parameter.
-	 *
-	 * @param name parameter name
-	 * @param type parameter type
-	 * @throws SQLException 		   if an error occurred
-	 */
-	public void registerOutParameter(String name, int type) throws SQLException {
-		for (int index : getIndexes(name)) {
-			statement.registerOutParameter(index, type);
-		}
-	}
-
-	public Object getOutParameter(String name) throws SQLException {
-		return statement.getObject(name);
-	}
-
-	/**
-	 * Sets a parameter.
-	 *
-	 * @param name parameter name
-	 * @param type parameter type
-	 * @throws SQLException 		   if an error occurred
-	 */
-	public void registerOutParameter(String name, SQLType type) throws SQLException {
-		for (int index : getIndexes(name)) {
-			statement.registerOutParameter(index, type);
-		}
 	}
 
 	/**
@@ -162,7 +143,8 @@ public class NamedParameterCall implements NamedParameter {
 	 * 
 	 * @return the statement
 	 */
-	public java.sql.CallableStatement getStatement() {
+	@Override
+	public PreparedStatement getStatement() {
 		return statement;
 	}
 
@@ -171,8 +153,9 @@ public class NamedParameterCall implements NamedParameter {
 	 * 
 	 * @return true if the first result is a {@link ResultSet}
 	 * @throws SQLException if an error occurred
-	 * @see java.sql.CallableStatement#execute()
+	 * @see PreparedStatement#execute()
 	 */
+	@Override
 	public boolean execute() throws SQLException {
 		return statement.execute();
 	}
@@ -182,8 +165,9 @@ public class NamedParameterCall implements NamedParameter {
 	 * 
 	 * @return the query results
 	 * @throws SQLException if an error occurred
-	 * @see java.sql.CallableStatement#executeQuery()
+	 * @see PreparedStatement#executeQuery()
 	 */
+	@Override
 	public ResultSet executeQuery() throws SQLException {
 		return statement.executeQuery();
 	}
@@ -194,8 +178,9 @@ public class NamedParameterCall implements NamedParameter {
 	 * 
 	 * @return number of rows affected
 	 * @throws SQLException if an error occurred
-	 * @see java.sql.CallableStatement#executeUpdate()
+	 * @see PreparedStatement#executeUpdate()
 	 */
+	@Override
 	public int executeUpdate() throws SQLException {
 		return statement.executeUpdate();
 	}
@@ -204,7 +189,7 @@ public class NamedParameterCall implements NamedParameter {
 	 * Closes the statement.
 	 * 
 	 * @throws SQLException if an error occurred
-	 * @see CallableStatement#close()
+	 * @see Statement#close()
 	 */
 	@Override
 	public void close() throws SQLException {
@@ -216,17 +201,19 @@ public class NamedParameterCall implements NamedParameter {
 	 * 
 	 * @throws SQLException if something went wrong
 	 */
+	@Override
 	public void addBatch() throws SQLException {
 		statement.addBatch();
 	}
 
 	/**
 	 * Executes all the batched statements.
-	 * See {@link CallableStatement#executeBatch()} for details.
+	 * See {@link Statement#executeBatch()} for details.
 	 * 
 	 * @return update counts for each statement
 	 * @throws SQLException if something went wrong
 	 */
+	@Override
 	public int[] executeBatch() throws SQLException {
 		return statement.executeBatch();
 	}
@@ -237,6 +224,7 @@ public class NamedParameterCall implements NamedParameter {
 	 * @return generated keys
 	 * @throws SQLException if something went wrong
 	 */
+	@Override
 	public ResultSet getGeneratedKeys() throws SQLException {
 		return statement.getGeneratedKeys();
 	}
@@ -264,6 +252,7 @@ public class NamedParameterCall implements NamedParameter {
 	 * @param name parameter name
 	 * @return if the parameter exists
 	 */
+	@Override
 	public boolean hasParameter(String name) {
 		return indexMap.containsKey(name);
 	}

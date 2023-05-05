@@ -1,8 +1,8 @@
-package cs.devfire.auction_system_orm.database.dao;
+package cz.devfire.auction_system_orm.database.dao;
 
-import cs.devfire.auction_system_orm.database.connection.ConnectionProvider;
-import cs.devfire.auction_system_orm.database.connection.NamedParameterStatement;
-import cs.devfire.auction_system_orm.database.connection.SQLCallable;
+import cz.devfire.auction_system_orm.database.connection.ConnectionProvider;
+import cz.devfire.auction_system_orm.database.connection.NamedParameterStatement;
+import cz.devfire.auction_system_orm.database.connection.SQLCallable;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
